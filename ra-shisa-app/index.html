@@ -303,6 +303,7 @@
             const splash = document.getElementById('splash-screen');
             splash.style.opacity = '0';
             unlockAudio();
+            ambientAudio.play().catch(e => console.log("再生ブロックされた場合、画面のどこかをクリックしてください"));
             setTimeout(() => {
                 splash.style.display = 'none';
                 bgDefault.style.opacity = '1';
@@ -644,6 +645,19 @@
                 }
             });
         });
+
+        // 追記：音声関連の初期化と拡張
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ja-JP';
+            recognition.interimResults = false;
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                console.log("音声入力内容:", transcript);
+            };
+            window.startVoiceInput = () => { recognition.start(); };
+        }
     </script>
 </body>
 </html>
