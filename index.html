@@ -299,10 +299,19 @@
     </div>
 
     <script>
+        const kaiganAudio = new Audio('kaigan1.mp3');
+        const ryukyuAudio = new Audio('ryukyu.mp3');
+
+        kaiganAudio.preload = "auto";
+        ryukyuAudio.preload = "auto";
+        
         function dismissSplash() {
             const splash = document.getElementById('splash-screen');
             splash.style.opacity = '0';
+
             unlockAudio();
+            kaiganAudio.play().catch(e => console.log("再生拒否されました:", e));
+
             setTimeout(() => {
                 splash.style.display = 'none';
                 bgDefault.style.opacity = '1';
@@ -444,9 +453,11 @@
             currentPhase = 2;
             stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
             ambientAudio.pause(); 
+            kaiganAudio.pause();
             eisaAudio.volume = 1.0;
             eisaAudio.currentTime = 0;
             eisaAudio.play().catch(e => console.log("Eisa Audio play failed", e));
+
             bgAfterStop.style.zIndex = '120'; 
             bgAfterStop.style.opacity = '1';
             bgDefault.style.opacity = '0';
