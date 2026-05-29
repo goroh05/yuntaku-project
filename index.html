@@ -299,7 +299,6 @@
     </div>
 
     <script>
-<<<<<<< HEAD
         const kaiganAudio = new Audio('kaigan1.mp3');
         const ryukyuAudio = new Audio('ryukyu.mp3');
 
@@ -310,12 +309,6 @@
             unlockAudio();
             kaiganAudio.play().catch(e => console.log("再生拒否されました:", e));
 
-=======
-        function dismissSplash() {
-            const splash = document.getElementById('splash-screen');
-            splash.style.opacity = '0';
-            unlockAudio();
->>>>>>> 022ef400a1d480475082dcca053d95a36fc26fcf
             setTimeout(() => {
                 splash.style.display = 'none';
                 bgDefault.style.opacity = '1';
@@ -374,7 +367,6 @@
 
         function unlockAudio() {
             if (audioUnlocked) return;
-<<<<<<< HEAD
             
             // 明示的にロードし直す
             ambientAudio.load();
@@ -385,13 +377,6 @@
             const silent = new SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(silent);
             
-=======
-            window.speechSynthesis.cancel();
-            const silent = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(silent);
-            ambientAudio.load(); 
-            eisaAudio.load();
->>>>>>> 022ef400a1d480475082dcca053d95a36fc26fcf
             audioUnlocked = true;
         }
 
@@ -458,10 +443,6 @@
         }
 
         function prepareWaitMode() {
-<<<<<<< HEAD
-=======
-            window.speechSynthesis.cancel();
->>>>>>> 022ef400a1d480475082dcca053d95a36fc26fcf
             isGreeting = false;
             isHPSpeaking = false;
             isSpeechPausedByLeave = false;
@@ -469,17 +450,11 @@
             currentPhase = 2;
             stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
             ambientAudio.pause(); 
-<<<<<<< HEAD
             kaiganAudio.pause();
             eisaAudio.volume = 1.0;
             eisaAudio.currentTime = 0;
             eisaAudio.play().catch(e => console.log("Eisa Audio play failed", e));
 
-=======
-            eisaAudio.volume = 1.0;
-            eisaAudio.currentTime = 0;
-            eisaAudio.play().catch(e => console.log("Eisa Audio play failed", e));
->>>>>>> 022ef400a1d480475082dcca053d95a36fc26fcf
             bgAfterStop.style.zIndex = '120'; 
             bgAfterStop.style.opacity = '1';
             bgDefault.style.opacity = '0';
@@ -683,8 +658,4 @@
         });
     </script>
 </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> 022ef400a1d480475082dcca053d95a36fc26fcf
