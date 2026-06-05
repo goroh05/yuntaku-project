@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RATIO - RAシーサー Evolution</title>
+    <link rel="icon" href="https://lh3.googleusercontent.com/d/1InTm1En_hXtoHZh8WJJw520D1vQOdn-D" type="image/x-icon">
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: #a7e1ed;
+            display: flex; justify-content: center; align-items: center;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            touch-action: manipulation;
+        }
+
+        /* 起動画面（スプラッシュ画面） */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease-out, visibility 0.8s;
+            border: none;
+        }
+        #splash-logo {
+            width: 85%;
+            max-width: 500px;
+            height: auto;
+            object-fit: contain;
+            opacity: 1;
+            margin-bottom: 40px; /* ボタンとの間隔を空ける */
+        }
+        
+        /* スタートボタンのデザイン */
+        #start-button {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background: #ff1744;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 23, 68, 0.3);
+            transition: transform 0.2s, background 0.2s;
+            letter-spacing: 0.1em;
+            outline: none;
+        }
+        #start-button:active {
+            transform: scale(0.95);
+            background: #d50000;
+        }
+
+        .stage {
+            width: 100%; height: 100%;
+            position: relative;
+            background: #a7e1ed;
+            overflow: hidden;
+        }
+
+        .bg-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        .bg-img {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        #bg-default { 
+            z-index: 100; 
+            opacity: 1;
+            display: block;
+        }
+        
+        #bg-after-stop {
+            z-index: 50;
+            opacity: 0;
+            object-position: center 40%;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .seesar-container {
+            position: absolute;
+            width: 200px; 
+            height: 200px;
+            z-index: 150;
+            left: 50%;
+            top: 40%; 
+            transform: translate(-50%, -50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            will-change: transform, left, top, opacity;
+        }
+
+        #mono-container { 
+            display: flex; 
+            opacity: 1; 
+            width: 420px; 
+            height: 420px;
+            top: 52%; 
+        }
+
+        #eisa-container { display: none; opacity: 0; }
+
+        .seesar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        .floating-anim {
+            animation: floating-seesar 3s ease-in-out infinite;
+        }
+        @keyframes floating-seesar {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-15px); }
+        }
+
+        #response-bubble { 
+            position: fixed; 
+            background: rgba(255, 255, 255, 0.98); 
+            padding: 20px; 
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            font-weight: bold; color: #333; 
+            z-index: 200; 
+            text-align: left;
+            max-width: 80%; 
+            width: 450px;
+            left: 50%; 
+            transform: translateX(-50%);
+            bottom: auto;
+            top: 40px; 
+            font-size: 18px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, top 0.3s ease;
+            border: none;
+        }
+
+        /* 4つのアイコンの表示設定 */
+        .shortcut-btn {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            z-index: 180;
+            display: none; /* 初期状態は非表示（首里城移行時に一斉表示） */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: opacity 0.5s ease;
+            text-decoration: none;
+            opacity: 0;
+        }
+
+        #hp-link-btn { right: 36%; top: 20%; }
+        #handshake-btn { right: 32%; top: 75%; }
+        #audience-btn { left: 32%; top: 75%; }
+        #question-btn { left: 32%; top: 20%; } 
+
+        .icon-svg, .icon-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .pulse-active {
+            animation: pulse-effect 1.5s infinite;
+            opacity: 1 !important;
+        }
+
+        @keyframes pulse-effect {
+            0% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(255, 50, 50, 0)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.6)); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(255, 50, 50, 0)); }
+        }
+
+        #btn-container {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+        }
+
+        .action-btn { 
+            width: 75px; 
+            height: 75px; 
+            border-radius: 50%; 
+            background: #ff1744; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            box-shadow: 0 8px 25px rgba(255, 23, 68, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        @media screen and (max-width: 480px) {
+            .seesar-container { width: 150px; height: 150px; left: 50%; top: 30%; }
+            #mono-container { width: 220px; height: 220px; top: 50%; }
+            #response-bubble { width: 85%; font-size: 16px; top: 10px; padding: 15px; border-radius: 20px; }
+            #response-bubble.is-main { top: 40% !important; transform: translate(-50%, -50%); }
+            #bg-after-stop { transform: translateY(-180px); height: calc(100% + 180px); object-position: center center; }
+            #hp-link-btn { width: 70px; height: 70px; right: 18%; top: 12%; }
+            #handshake-btn { width: 70px; height: 70px; right: 12%; top: 72%; }
+            #audience-btn { width: 70px; height: 70px; left: 12%; top: 72%; }
+            #question-btn { width: 70px; height: 70px; left: 12%; top: 12%; } 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 起動画面（表紙） -->
+    <div id="splash-screen">
+        <!-- ロゴ -->
+        <img id="splash-logo" src="https://lh3.googleusercontent.com/d/1r5kZEhMwhQt40weqmB-ABYW_k4Ft0tQB" alt="RATIO Logo">
+        <!-- スタートボタン -->
+        <button id="start-button" onclick="dismissSplash()">START</button>
+    </div>
+
+    <div class="stage">
+        <div class="bg-container">
+            <img id="bg-default" class="bg-img" src="https://i.postimg.cc/90WWJqXF/bg.jpg" alt="Sea Background">
+            <img id="bg-after-stop" class="bg-img" src="https://i.postimg.cc/76SMfq5n/shou-li-cheng.png" alt="Stop Background">
+        </div>
+
+        <!-- 波の音 -->
+        <audio id="ambient-audio" loop preload="auto">
+            <source src="https://www.soundjay.com/nature/ocean-wave-1.mp3" type="audio/mpeg">
+        </audio>
+
+        <audio id="eisa-audio" loop preload="auto">
+            <source src="https://www.soundjay.com/misc/sounds/music-box-1.mp3" type="audio/mpeg">
+        </audio>
+
+        <div id="mono-container" class="seesar-container floating-anim">
+            <img id="mono-img" class="seesar-img" src="https://lh3.googleusercontent.com/d/1VluKJT6PVzleq8s_K5gZkdppLtXZT7KJ" alt="RA Seesar Logo">
+        </div>
+
+        <div id="eisa-container" class="seesar-container">
+            <img id="eisa-img" class="seesar-img" src="https://lh3.googleusercontent.com/d/1L9aZ4CbMHEb1y_R3B-QJ5McSEEKVSjkq" alt="RA Seesar Eisa">
+        </div>
+
+        <a id="hp-link-btn" class="shortcut-btn" href="https://www.ratio-okinawa.jp/" target="_blank">
+            <svg class="icon-svg" viewBox="0 0 100 100">
+                <rect x="25" y="45" width="50" height="35" fill="#fcfaf2" stroke="#333" stroke-width="0.5"/>
+                <path d="M15 50 L50 20 L85 50 Z" fill="#b22222" stroke="#fff" stroke-width="0.2" />
+                <path d="M30 40 L50 25 L70 40" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+                <path d="M22 46 L50 22 L78 46" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+                <rect x="42" y="60" width="16" height="20" fill="#8b4513"/>
+            </svg>
+        </a>
+
+        <a id="handshake-btn" class="shortcut-btn" href="#" onclick="return false;">
+            <img class="icon-img" src="https://i.postimg.cc/05dMBQSQ/Gemini-Generated-Image-bkowembkowembkow.png" alt="Partner Illustration">
+        </a>
+
+        <a id="audience-btn" class="shortcut-btn" href="#" target="_blank">
+            <svg class="icon-svg" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="#fcfaf2" stroke="#ff9800" stroke-width="0.5"/>
+                <path d="M50 35 Q50 25 60 25 Q70 25 70 35 L70 45 L30 45 L30 35 Q30 25 40 25 Q50 25 50 35 Z" fill="#333" transform="translate(0, 5)"/>
+                <circle cx="30" cy="65" r="6" fill="#ff5722"/>
+                <circle cx="50" cy="72" r="6" fill="#ff5722"/>
+                <circle cx="70" cy="65" r="6" fill="#ff5722"/>
+                <path d="M22 85 Q30 75 38 85" fill="none" stroke="#ff5722" stroke-width="1.5"/>
+                <path d="M42 90 Q50 80 58 90" fill="none" stroke="#ff5722" stroke-width="1.5"/>
+                <path d="M62 85 Q70 75 78 85" fill="none" stroke="#ff5722" stroke-width="1.5"/>
+            </svg>
+        </a>
+
+        <!-- 質問ボタン（リンク先を比嘉様のデプロイ済みGAS本番URLに設定してあります！） -->
+        <a id="question-btn" class="shortcut-btn" href="https://script.google.com/macros/s/AKfycbwbOTnmG7MJ7u1ROK8sbj7SS6YNucx_QcZNo2e52Tb_6IHfzzKXlKGRnJRpd3KOUIPTrg/exec" target="_blank">
+            <svg class="icon-svg" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="#ff9800" stroke="#fff" stroke-width="1"/>
+                <text x="50" y="65" font-size="50" text-anchor="middle" fill="white" font-weight="bold">?</text>
+            </svg>
+        </a>
+
+        <div id="response-bubble"></div>
+
+        <div id="btn-container">
+            <button id="main-toggle-btn" class="action-btn" onclick="handleController()">
+                <svg id="toggle-icon" viewBox="0 0 24 24" width="35" height="35" fill="currentColor">
+                    <path id="icon-path" d="M8 5v14l11-7z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function dismissSplash() {
+            // スプラッシュ画面を非表示にする
+            const splash = document.getElementById('splash-screen');
+            splash.style.opacity = '0';
+            
+            // 音声をアンロックする
+            unlockAudio();
+            
+            setTimeout(() => {
+                splash.style.display = 'none';
+                
+                // 背景はデフォルトの美しい海（bg-default）のままスタート！
+                bgDefault.style.opacity = '1';
+                bgAfterStop.style.opacity = '0';
+                bgAfterStop.style.zIndex = '50';
+                
+                // 最初（海岸）は4つのアイコンを完全に非表示にします
+                hideAllIcons();
+                
+                // シーサーは海の段階では通常のロゴ（mono-container）を表示
+                monoContainer.style.display = "flex";
+                monoContainer.style.opacity = "1";
+                eisaContainer.style.display = "none";
+                
+                // 海の背景の上で、波の音とともに最初の挨拶を開始するさ〜！
+                startGreeting();
+            }, 800);
+        }
+
+        const leftFaceIds = ["1InTm1En_hXtoHZh8WJJw520D1vQOdn-D", "1OBCusGd6G4-DokBT9UaqeIDpWl3olQZ_", "1X0p8yOLpR2gD8jl_30At1bbN7MjTKa43", "1Z4q_7xRhUqVPFTuffgsj_cDvWiN7qUu4"];
+        const rightFaceIds = ["1L9aZ4CbMHEb1y_R3B-QJ5McSEEKVSjkq", "1nBFOamakC2XTlXXAyiFqToweqtPYt74C", "1-GB_pNhAOeoRVEUyA0k-6uHQMcQuYBi4", "14bpKTDYppqaNkmrDCPLzStfe9pi21rKo"];
+        const allPoses = [...rightFaceIds, ...leftFaceIds];
+        const baseUrl = "https://lh3.googleusercontent.com/d/";
+        const waitEisaId = "1L9aZ4CbMHEb1y_R3B-QJ5McSEEKVSjkq"; 
+
+        const preloadedImages = [];
+        allPoses.forEach(id => {
+            const img = new Image();
+            img.src = baseUrl + id;
+            preloadedImages.push(img);
+        });
+
+        const bgDefault = document.getElementById('bg-default');
+        const bgAfterStop = document.getElementById('bg-after-stop');
+        const monoContainer = document.getElementById('mono-container');
+        const eisaContainer = document.getElementById('eisa-container');
+        const eisaImg = document.getElementById('eisa-img');
+        const ambientAudio = document.getElementById('ambient-audio');
+        const eisaAudio = document.getElementById('eisa-audio');
+        const bubble = document.getElementById('response-bubble');
+        const iconPath = document.getElementById('icon-path');
+        const hpBtn = document.getElementById('hp-link-btn');
+        const handBtn = document.getElementById('handshake-btn');
+        const audienceBtn = document.getElementById('audience-btn');
+        const questionBtn = document.getElementById('question-btn');
+
+        let currentPhase = 1;
+        let danceTimer = null;
+        let step = 0;
+        let audioUnlocked = false;
+        let isGreeting = false;
+        let isHPSpeaking = false;
+        
+        let stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
+
+        // 音声の一時停止・再開用フラグ
+        let isSpeechPausedByLeave = false;
+        // 踊り（アニメーション）の一時停止・再開用フラグ
+        let isDancePausedByLeave = false;
+
+        function getCenterCoords() {
+            const isMobile = window.innerWidth <= 480;
+            return { left: 50, top: isMobile ? 30 : 45 }; 
+        }
+
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            // 未再生音声キューの蓄積を防ぐため、事前にSpeechSynthesisを完全キャンセル
+            window.speechSynthesis.cancel();
+            
+            const silent = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(silent);
+            ambientAudio.load(); 
+            eisaAudio.load();
+            audioUnlocked = true;
+        }
+
+        function handleController() {
+            if (isGreeting || isHPSpeaking) {
+                // 挨拶中（音声発話中）にユーザーが再生ボタンを押した場合、お喋りを止めて次の首里城モードに移行させます
+                isGreeting = false;
+                isHPSpeaking = false;
+                window.speechSynthesis.cancel(); // 発話をピタッと強制停止
+            }
+            unlockAudio();
+            if (currentPhase === 1) {
+                // 海岸で再生（▶）ボタンをクリックしたタイミングで、首里城モードへ移行させます
+                prepareWaitMode();
+            } else if (currentPhase === 2) {
+                step = 0;
+                stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
+                startDance(); 
+            } else if (currentPhase === 3) {
+                stopToWait();
+            }
+        }
+
+        function startGreeting() {
+            // 新たな挨拶の発話に備えて、前回の音声再生状態をクリア
+            window.speechSynthesis.cancel();
+            
+            isGreeting = true;
+            hideAllIcons(); // 挨拶開始（海岸）時はアイコンを完全に隠します
+            bubble.classList.remove('is-main'); 
+            
+            // 海の画面での挨拶なので、海の波の音を心地よく再生します
+            ambientAudio.volume = 1.0;
+            ambientAudio.currentTime = 0;
+            ambientAudio.play().catch(e => console.log("Ambient play failed", e));
+            
+            // エイサーBGMは、海の挨拶中は再生を止めておきます
+            eisaAudio.pause();
+
+            // 「of」から「の」へ修正された歓迎テキスト
+            const text = "はいさい！RATIOのマスコットキャラクターのRAシーサーです！\n僕が案内するさ〜！今日も一日ユタシク（ヨロシク）やー！！";
+            bubble.innerText = text;
+            bubble.style.display = 'block';
+            setTimeout(() => bubble.style.opacity = '1', 50);
+            
+            // 読み上げ用音声テキスト
+            const speechText = "はいさい！ラティオのマスコットキャラクターのラシーサーです！僕が案内するさー！今日もいちにちユタシクやー！！";
+            const uttr = new SpeechSynthesisUtterance(speechText);
+            uttr.lang = 'ja-JP';
+            uttr.pitch = 1.3;
+            // 挨拶が終わっても自動移行はせず、海岸的シーンのまま再生ボタンのタップを待ちます
+            uttr.onend = () => { isGreeting = false; };
+            
+            // スタートアクションとダイレクトに連携させて確実にスピーチを実行
+            window.speechSynthesis.speak(uttr);
+        }
+
+        // 4つのアイコンを一斉に出現させる処理
+        function revealAllIcons() {
+            [hpBtn, handBtn, audienceBtn, questionBtn].forEach(btn => {
+                btn.style.display = 'flex';
+                setTimeout(() => {
+                    btn.style.opacity = '1';
+                }, 50);
+            });
+        }
+
+        // アイコンを完全に非表示にする処理
+        function hideAllIcons() {
+            [hpBtn, handBtn, audienceBtn, questionBtn].forEach(btn => {
+                btn.style.display = 'none';
+                btn.style.opacity = '0';
+                btn.classList.remove('pulse-active');
+            });
+        }
+
+        // 脈動（pulse-active）エフェクトの解除のみを行う処理
+        function resetIcons() {
+            [hpBtn, handBtn, audienceBtn, questionBtn].forEach(btn => {
+                btn.classList.remove('pulse-active');
+            });
+        }
+
+        function prepareWaitMode() {
+            // 移行開始時、もしお喋り（音声）が動作していれば強制キャンセル
+            window.speechSynthesis.cancel();
+            isGreeting = false;
+            isHPSpeaking = false;
+            isSpeechPausedByLeave = false; // フラグもリセット
+            isDancePausedByLeave = false;
+
+            currentPhase = 2;
+            stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
+            
+            // 首里城に移行するため、海の波の音を優しく止めます
+            ambientAudio.pause(); 
+            
+            // エイサー音楽の音量を通常の 1.0 に戻して大合奏スタート！
+            eisaAudio.volume = 1.0;
+            eisaAudio.currentTime = 0;
+            eisaAudio.play().catch(e => console.log("Eisa Audio play failed", e));
+            
+            // 背景を首里城に変更します
+            bgAfterStop.style.zIndex = '120'; 
+            bgAfterStop.style.opacity = '1';
+            bgDefault.style.opacity = '0';
+            resetIcons();
+            
+            // 首里城へ切り替わったこの瞬間に、4つのアイコンを一斉に出現させます！
+            revealAllIcons();
+            
+            // シーサーを首里城の太鼓エイサーシーサーに変更します
+            monoContainer.style.display = "none";
+            eisaContainer.style.display = "flex";
+            eisaContainer.style.opacity = "1";
+            const coords = getCenterCoords();
+            eisaContainer.style.left = coords.left + "%";
+            eisaContainer.style.top = coords.top + "%";
+            eisaContainer.classList.add('floating-anim');
+            bubble.style.opacity = '0';
+            setTimeout(() => bubble.style.display = 'none', 300);
+            updateUI('play');
+        }
+
+        function startDance() {
+            currentPhase = 3;
+            updateUI('stop'); 
+            eisaContainer.classList.remove('floating-anim');
+            if(danceTimer) clearInterval(danceTimer);
+            const stepsPerSide = 40; 
+            const totalSteps = stepsPerSide * 5; 
+
+            danceTimer = setInterval(() => {
+                if (isHPSpeaking) return; 
+                const movementCycle = step % totalSteps;
+                const side = Math.floor(movementCycle / stepsPerSide); 
+                const progress = (movementCycle % stepsPerSide) / stepsPerSide;
+                const animIndex = step % allPoses.length;
+                const center = getCenterCoords();
+                const isMobile = window.innerWidth <= 480;
+                const sizeX = isMobile ? 25 : 12; 
+                const sizeY = isMobile ? 30 : 20; 
+                let posX, posY;
+
+                if (side === 0) {
+                    posX = center.left + (sizeX * progress); 
+                    posY = center.top;
+                    if (progress >= 0.95 && !stopFlags.corner1) {
+                        stopFlags.corner1 = true;
+                        pauseForIntroduction("hp");
+                        return;
+                    }
+                }
+                else if (side === 1) {
+                    posX = center.left + sizeX; 
+                    posY = center.top + (sizeY * progress);
+                    if (progress >= 0.95 && !stopFlags.corner2) {
+                        stopFlags.corner2 = true;
+                        pauseForIntroduction("partner");
+                        return;
+                    }
+                }
+                else if (side === 2) {
+                    posX = (center.left + sizeX) - (sizeX * 2 * progress); 
+                    posY = center.top + sizeY; 
+                    if (progress >= 0.95 && !stopFlags.corner3) {
+                        stopFlags.corner3 = true;
+                        pauseForIntroduction("audience");
+                        return;
+                    }
+                }
+                else if (side === 3) {
+                    posX = center.left - sizeX; 
+                    posY = (center.top + sizeY) - (sizeY * progress); 
+                    if (progress >= 0.95 && !stopFlags.corner4) {
+                        stopFlags.corner4 = true;
+                        pauseForIntroduction("question");
+                        return;
+                    }
+                }
+                else {
+                    posX = (center.left - sizeX) + (sizeX * progress);
+                    posY = center.top;
+                    if (progress >= 0.98) {
+                        stopFlags = { corner1: false, corner2: false, stroke: false, corner3: false, corner4: false };
+                        resetIcons();
+                    }
+                }
+
+                eisaImg.src = baseUrl + allPoses[animIndex];
+                const tilt = Math.sin(step * 0.4) * 12; 
+                eisaContainer.style.left = posX + "%";
+                eisaContainer.style.top = posY + "%";
+                eisaContainer.style.transform = `translate(-50%, -50%) rotate(${tilt}deg)`;
+                step++;
+            }, 150);
+        }
+
+        function pauseForIntroduction(type) {
+            isHPSpeaking = true;
+            eisaAudio.volume = 0.2;
+            let targetBtn;
+            if(type === "hp") targetBtn = hpBtn;
+            else if(type === "partner") targetBtn = handBtn;
+            else if(type === "audience") targetBtn = audienceBtn;
+            else targetBtn = questionBtn;
+
+            let text = "";
+            let speech = "";
+            if (type === "hp") {
+                text = "ちむどんどん（ドキドキ）するさ〜！このアイコンの先には、RATIOのワクワクがいっぱい詰まったページがあるよ！まずは一度、遊びに行ってみてね〜！";
+                speech = "ちむどんどん、するさー！このアイコンの先には、ラティオのワクワクがいっぱい詰まったページがあるよ！まずは一度、遊びに行ってみねー！";
+            } else if (type === "partner") {
+                text = "会計事務所の皆様、いつもお疲れ様です！僕たちは皆様の最高のパートナーになりたいさ〜！一緒に地域を元気にしようね！！";
+                speech = "かいけいじむしょの皆様、いつもお疲れ様 es！僕たちは皆様の最高のパートナーになりたいさー！一緒にちいきを元気にしようね！！";
+            } else if (type === "audience") {
+                text = "個人事業主ネットワークを運営される、本部事務局の皆様へ！\nRATIOが会計支援システムとして, 皆様の事務負担をグッと軽くするさ〜！";
+                speech = "こじんじぎょうぬしネットワークを運営される、ほんぶじむきょくの皆様へ！ラティオが会計支援システムとして, 皆様の事務負担をグッと軽くするさー！";
+            } else if (type === "question") {
+                text = "質問はこちらから！ゆんたく（お喋り）しながら、一緒に解決していこうね〜！";
+                speech = "質問はこちらから！ゆんたく、しながら、一緒に解決していこうねー！";
+            }
+
+            // アイコン自体はすでに表示されているので、脈動（アピール）エフェクトのみを付与する
+            targetBtn.classList.add('pulse-active');
+
+            bubble.innerText = text;
+            bubble.classList.add('is-main'); 
+            bubble.style.display = 'block';
+            bubble.style.opacity = '1';
+
+            const uttr = new SpeechSynthesisUtterance(speech);
+            uttr.lang = 'ja-JP';
+            uttr.pitch = 1.3;
+            uttr.onend = () => {
+                targetBtn.classList.remove('pulse-active');
+                setTimeout(() => {
+                    eisaAudio.volume = 1.0;
+                    bubble.style.opacity = '0';
+                    setTimeout(() => {
+                        bubble.style.display = 'none';
+                        isHPSpeaking = false;
+                        startDance(); 
+                    }, 500);
+                }, 1500);
+            };
+            window.speechSynthesis.speak(uttr);
+        }
+
+        function stopToWait() {
+            currentPhase = 2; 
+            if(danceTimer) clearInterval(danceTimer);
+            updateUI('play');
+            resetIcons();
+            // 待機中もアイコンを表示し続ける
+            revealAllIcons();
+            const coords = getCenterCoords();
+            eisaContainer.style.left = coords.left + "%";
+            eisaContainer.style.top = coords.top + "%";
+            eisaContainer.classList.add('floating-anim');
+            eisaImg.src = baseUrl + waitEisaId; 
+            eisaContainer.style.transform = "translate(-50%, -50%) rotate(0deg)";
+            step = 0; 
+            stopFlags = { corner1: false, corner2: false, stroke: false, corner3: false, corner4: false };
+        }
+
+        function updateUI(state) {
+            if (state === 'stop') {
+                iconPath.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+            } else {
+                iconPath.setAttribute('d', 'M8 5v14l11-7z');
+            }
+        }
+
+        // タブ切り替えや画面フォーカスの変化を検知してお喋りと「踊り」を一時停止・自動再開するシステム
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                // 画面から離れた（非アクティブになった）とき、現在お喋り中なら一時停止する
+                if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                    window.speechSynthesis.pause();
+                    isSpeechPausedByLeave = true;
+                    // BGM（エイサー音源）も合わせて一時停止
+                    eisaAudio.pause();
+                }
+                // 踊り（エイサーアニメーション）もその瞬間のポーズ・座標でピタッと一時停止する
+                if (currentPhase === 3 && danceTimer) {
+                    clearInterval(danceTimer);
+                    danceTimer = null;
+                    isDancePausedByLeave = true;
+                }
+            } else if (document.visibilityState === 'visible') {
+                // 画面に戻ってきたとき、一時停止されていたお喋りがあれば再開する
+                if (isSpeechPausedByLeave) {
+                    window.speechSynthesis.resume();
+                    isSpeechPausedByLeave = false;
+                    // BGM（エイサー音源）も再開
+                    eisaAudio.play().catch(e => console.log("Eisa audio resume failed", e));
+                }
+                // 一時停止されていた踊りを、同じ座標・ポーズから綺麗に再開する
+                if (isDancePausedByLeave) {
+                    startDance();
+                    isDancePausedByLeave = false;
+                }
+            }
+        });
+
+        // 各アイコンをクリックした瞬間にも、ブラウザによるタイムラグなく確実に一時停止を即時実行する
+        [hpBtn, handBtn, audienceBtn, questionBtn].forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                    window.speechSynthesis.pause();
+                    isSpeechPausedByLeave = true;
+                    eisaAudio.pause();
+                }
+                // アイコン先をタップした瞬間も、ダンスのフレームワークをその場で完璧にフリーズさせる
+                if (currentPhase === 3 && danceTimer) {
+                    clearInterval(danceTimer);
+                    danceTimer = null;
+                    isDancePausedByLeave = true;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

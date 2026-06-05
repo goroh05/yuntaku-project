@@ -1,0 +1,78 @@
+/**
+ * RAシーサー Evolution 
+ * サーバー側処理（Google Apps Script）
+ */
+
+const apiKey = PropertiesService.getScriptProperties().getProperty('Gemini API Key');
+
+function doGet() {
+  return HtmlService.createTemplateFromFile('index')
+    .evaluate()
+    .setTitle('RAシーサー Evolution')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Gemini APIと通信する関数
+ */
+function callGemini(userQuery) {
+  if (!apiKey) return "APIキー（Gemini API Key）を設定してね。";
+
+  const modelId = "gemini-2.5-flash"; 
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+  
+  // 比嘉さんとの約束：結論、要約、120文字、読み上げの間
+  const systemInstruction = `あなたは沖縄の税務アシスタント『RAシーサー』です。
+以下の【鉄の掟】を厳守して回答してください：
+1. 構成：一行目に【結論】。二行目に【要約】。これ以外は一切書かない。
+2. 文字数：合計120文字以内で必ず文章を完結させる。
+3. 読み上げ対策：聞き取りやすいよう、意味の区切りに「、」や「。」を必ず入れる。
+4. 方言：語尾は「さー」「さーね」「ね」を使い、親しみやすく。
+5. 完結：絶対に途中で切らず、最後は「。」で終わること。`;
+
+  const payload = {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: `${systemInstruction}\n\n質問: ${userQuery}` }]
+      }
+    ],
+    generationConfig: {
+      maxOutputTokens: 800,
+      temperature: 0.5 // 安定性を高めるために少し下げる
+    }
+  };
+
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  try {
+    const response = UrlFetchApp.fetch(apiUrl, options);
+    const json = JSON.parse(response.getContentText());
+    
+    if (json.candidates && json.candidates[0].content.parts[0].text) {
+      let aiText = json.candidates[0].content.parts[0].text.trim();
+      
+      // はいさい！を先頭に強制付与（AIの文字数節約のため）
+      if (!aiText.includes("はいさい")) {
+        aiText = "はいさい！\n" + aiText;
+      }
+      
+      // 万が一の尻切れ対策
+      if (!aiText.endsWith("。") && !aiText.endsWith("！")) {
+        aiText += "。";
+      }
+      
+      return aiText;
+    } else {
+      return "ごめんね、うまく言葉が出てこないさぁ。";
+    }
+  } catch (e) {
+    return "アイエナ！通信エラーが発生したさぁ。";
+  }
+}
