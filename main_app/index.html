@@ -498,7 +498,7 @@
             if (currentPhase === 1) {
                 prepareWaitMode();
             } else if (currentPhase === 2) {
-               
+
                 // 【重要修正】ここで確実に再生する
                 eisaAudio.pause(); // 一度止める
 
@@ -601,9 +601,17 @@
             const totalSteps = stepsPerSide * 5;
             danceTimer = setInterval(() => {
                 if (isHPSpeaking) return;
+
                 const movementCycle = step % totalSteps;
                 const side = Math.floor(movementCycle / stepsPerSide);
                 const progress = (movementCycle % stepsPerSide) / stepsPerSide;
+
+                // 4つ目通過後のリセット判定（ループの開始時にリセット）
+                if (movementCycle === 0) {
+                    stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
+                    resetIcons();
+                }
+
                 const animIndex = step % allPoses.length;
                 const center = getCenterCoords();
                 const isMobile = window.innerWidth <= 480;
@@ -614,10 +622,9 @@
                 if (side === 0) {
                     posX = center.left + (sizeX * progress);
                     posY = center.top;
-                    if (progress >= 0.95 && !stopFlags.corner1) {
+                    if (progress >= 0.9 && !stopFlags.corner1) {
                         stopFlags.corner1 = true;
                         pauseForIntroduction("hp");
-                        return;
                     }
                 }
                 else if (side === 1) {
@@ -626,7 +633,6 @@
                     if (progress >= 0.95 && !stopFlags.corner2) {
                         stopFlags.corner2 = true;
                         pauseForIntroduction("partner");
-                        return;
                     }
                 }
                 else if (side === 2) {
@@ -635,26 +641,21 @@
                     if (progress >= 0.95 && !stopFlags.corner3) {
                         stopFlags.corner3 = true;
                         pauseForIntroduction("audience");
-                        return;
                     }
                 }
                 else if (side === 3) {
                     posX = center.left - sizeX;
                     posY = (center.top + sizeY) - (sizeY * progress);
-                    if (progress >= 0.95 && !stopFlags.corner4) {
+                    if (progress >= 0.9 && !stopFlags.corner4) {
                         stopFlags.corner4 = true;
                         pauseForIntroduction("question");
-                        return;
                     }
                 }
                 else {
                     posX = (center.left - sizeX) + (sizeX * progress);
                     posY = center.top;
-                    if (progress >= 0.98) {
-                        stopFlags = { corner1: false, corner2: false, stroke: false, corner3: false, corner4: false };
-                        resetIcons();
-                    }
                 }
+
                 eisaImg.src = baseUrl + allPoses[animIndex];
                 const tilt = Math.sin(step * 0.4) * 12;
                 eisaContainer.style.left = posX + "%";
@@ -706,7 +707,6 @@
                     setTimeout(() => {
                         bubble.style.display = 'none';
                         isHPSpeaking = false;
-                        startDance();
                     }, 500);
                 }, 1500);
             };
@@ -717,12 +717,9 @@
             currentPhase = 2;
             if (danceTimer) clearInterval(danceTimer);
             updateUI('play');
-            
-        
             eisaContainer.classList.add('floating-anim');
             eisaImg.src = baseUrl + waitEisaId;
             eisaContainer.style.transform = "translate(-50%, -50%) rotate(0deg)";
-
         }
 
         function updateUI(state) {
@@ -735,11 +732,7 @@
 
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
-                // --- ★ここに追加！---
-                const ambientAudio = document.getElementById('ambient-audio');
                 if (ambientAudio) ambientAudio.pause();
-                // ---------------------
-
                 if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
                     window.speechSynthesis.pause();
                     isSpeechPausedByLeave = true;
@@ -751,11 +744,13 @@
                     isDancePausedByLeave = true;
                 }
             } else if (document.visibilityState === 'visible') {
+                // 戻ってきた時：フラグを確認して再開する
                 if (isSpeechPausedByLeave) {
                     window.speechSynthesis.resume();
                     isSpeechPausedByLeave = false;
                     eisaAudio.play().catch(e => console.log("Eisa audio resume failed", e));
                 }
+                // --- ★ここを追加（確実に再開させるための追記） ---
                 if (isDancePausedByLeave) {
                     startDance();
                     isDancePausedByLeave = false;
@@ -777,20 +772,6 @@
                 }
             });
         });
-
-        // 追記：音声関連の初期化と拡張
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'ja-JP';
-            recognition.interimResults = false;
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                console.log("音声入力内容:", transcript);
-            };
-            window.startVoiceInput = () => { recognition.start(); };
-        }
     </script>
 </body>
-
 </html>
