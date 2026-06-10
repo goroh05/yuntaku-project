@@ -498,11 +498,9 @@
             if (currentPhase === 1) {
                 prepareWaitMode();
             } else if (currentPhase === 2) {
-                step = 0;
-                stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
+               
                 // 【重要修正】ここで確実に再生する
                 eisaAudio.pause(); // 一度止める
-                eisaAudio.currentTime = 0; // 先頭に戻す
 
                 // play()の結果を気にせず、成功するまで待機する命令
                 const playPromise = eisaAudio.play();
@@ -719,16 +717,12 @@
             currentPhase = 2;
             if (danceTimer) clearInterval(danceTimer);
             updateUI('play');
-            resetIcons();
-            revealAllIcons();
-            const coords = getCenterCoords();
-            eisaContainer.style.left = coords.left + "%";
-            eisaContainer.style.top = coords.top + "%";
+            
+        
             eisaContainer.classList.add('floating-anim');
             eisaImg.src = baseUrl + waitEisaId;
             eisaContainer.style.transform = "translate(-50%, -50%) rotate(0deg)";
-            step = 0;
-            stopFlags = { corner1: false, corner2: false, stroke: false, corner3: false, corner4: false };
+
         }
 
         function updateUI(state) {
