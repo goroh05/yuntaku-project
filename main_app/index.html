@@ -421,7 +421,8 @@
             const splash = document.getElementById('splash-screen');
             splash.style.opacity = '0';
             unlockAudio();
-            ambientAudio.play().catch(e => console.log("再生ブロックされた場合、画面のどこかをクリックしてください"));
+            // 最初のアクション時に環境音を確実に開始する
+            ambientAudio.play().catch(e => console.log("Ambient play failed", e));
             setTimeout(() => {
                 splash.style.display = 'none';
                 bgDefault.style.opacity = '1';
@@ -498,21 +499,7 @@
             if (currentPhase === 1) {
                 prepareWaitMode();
             } else if (currentPhase === 2) {
-
-                // 【重要修正】ここで確実に再生する
-                eisaAudio.pause(); // 一度止める
-
-                // play()の結果を気にせず、成功するまで待機する命令
-                const playPromise = eisaAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        // 再生成功！
-                    }).catch(error => {
-                        // エラーが出ても気にしない（自動再生ブロックへの対策）
-                        console.log("再生は自動ブロックされましたが、次の操作で鳴ります");
-                    });
-                }
-
+                eisaAudio.play().catch(e => console.log("Play failed", e));
                 startDance();
             } else if (currentPhase === 3) {
                 stopToWait();
@@ -543,9 +530,7 @@
         function revealAllIcons() {
             [hpBtn, handBtn, audienceBtn, questionBtn].forEach(btn => {
                 btn.style.display = 'flex';
-                setTimeout(() => {
-                    btn.style.opacity = '1';
-                }, 50);
+                setTimeout(() => { btn.style.opacity = '1'; }, 50);
             });
         }
 
@@ -601,12 +586,10 @@
             const totalSteps = stepsPerSide * 5;
             danceTimer = setInterval(() => {
                 if (isHPSpeaking) return;
-
                 const movementCycle = step % totalSteps;
                 const side = Math.floor(movementCycle / stepsPerSide);
                 const progress = (movementCycle % stepsPerSide) / stepsPerSide;
 
-                // 4つ目通過後のリセット判定（ループの開始時にリセット）
                 if (movementCycle === 0) {
                     stopFlags = { corner1: false, corner2: false, corner3: false, corner4: false };
                     resetIcons();
@@ -620,46 +603,24 @@
                 let posX, posY;
 
                 if (side === 0) {
-                    posX = center.left + (sizeX * progress);
-                    posY = center.top;
-                    if (progress >= 0.9 && !stopFlags.corner1) {
-                        stopFlags.corner1 = true;
-                        pauseForIntroduction("hp");
-                    }
-                }
-                else if (side === 1) {
-                    posX = center.left + sizeX;
-                    posY = center.top + (sizeY * progress);
-                    if (progress >= 0.95 && !stopFlags.corner2) {
-                        stopFlags.corner2 = true;
-                        pauseForIntroduction("partner");
-                    }
-                }
-                else if (side === 2) {
-                    posX = (center.left + sizeX) - (sizeX * 2 * progress);
-                    posY = center.top + sizeY;
-                    if (progress >= 0.95 && !stopFlags.corner3) {
-                        stopFlags.corner3 = true;
-                        pauseForIntroduction("audience");
-                    }
-                }
-                else if (side === 3) {
-                    posX = center.left - sizeX;
-                    posY = (center.top + sizeY) - (sizeY * progress);
-                    if (progress >= 0.9 && !stopFlags.corner4) {
-                        stopFlags.corner4 = true;
-                        pauseForIntroduction("question");
-                    }
-                }
-                else {
-                    posX = (center.left - sizeX) + (sizeX * progress);
-                    posY = center.top;
+                    posX = center.left + (sizeX * progress); posY = center.top;
+                    if (progress >= 0.9 && !stopFlags.corner1) { stopFlags.corner1 = true; pauseForIntroduction("hp"); }
+                } else if (side === 1) {
+                    posX = center.left + sizeX; posY = center.top + (sizeY * progress);
+                    if (progress >= 0.95 && !stopFlags.corner2) { stopFlags.corner2 = true; pauseForIntroduction("partner"); }
+                } else if (side === 2) {
+                    posX = (center.left + sizeX) - (sizeX * 2 * progress); posY = center.top + sizeY;
+                    if (progress >= 0.95 && !stopFlags.corner3) { stopFlags.corner3 = true; pauseForIntroduction("audience"); }
+                } else if (side === 3) {
+                    posX = center.left - sizeX; posY = (center.top + sizeY) - (sizeY * progress);
+                    if (progress >= 0.9 && !stopFlags.corner4) { stopFlags.corner4 = true; pauseForIntroduction("question"); }
+                } else {
+                    posX = (center.left - sizeX) + (sizeX * progress); posY = center.top;
                 }
 
                 eisaImg.src = baseUrl + allPoses[animIndex];
                 const tilt = Math.sin(step * 0.4) * 12;
-                eisaContainer.style.left = posX + "%";
-                eisaContainer.style.top = posY + "%";
+                eisaContainer.style.left = posX + "%"; eisaContainer.style.top = posY + "%";
                 eisaContainer.style.transform = `translate(-50%, -50%) rotate(${tilt}deg)`;
                 step++;
             }, 150);
@@ -674,8 +635,7 @@
             else if (type === "audience") targetBtn = audienceBtn;
             else targetBtn = questionBtn;
 
-            let text = "";
-            let speech = "";
+            let text = ""; let speech = "";
             if (type === "hp") {
                 text = "ちむどんどん（ドキドキ）するさ〜！このアイコンの先には、RATIOのワクワクがいっぱい詰まったページがあるよ！まずは一度、遊びに行ってみてね〜！";
                 speech = "ちむどんどん、するさー！このアイコンの先には、ラティオのワクワクがいっぱい詰まったページがあるよ！まずは一度、遊びに行ってみねー！";
@@ -691,23 +651,14 @@
             }
 
             targetBtn.classList.add('pulse-active');
-            bubble.innerText = text;
-            bubble.classList.add('is-main');
-            bubble.style.display = 'block';
-            bubble.style.opacity = '1';
-
+            bubble.innerText = text; bubble.classList.add('is-main'); bubble.style.display = 'block'; bubble.style.opacity = '1';
             const uttr = new SpeechSynthesisUtterance(speech);
-            uttr.lang = 'ja-JP';
-            uttr.pitch = 1.3;
+            uttr.lang = 'ja-JP'; uttr.pitch = 1.3;
             uttr.onend = () => {
                 targetBtn.classList.remove('pulse-active');
                 setTimeout(() => {
-                    eisaAudio.volume = 1.0;
-                    bubble.style.opacity = '0';
-                    setTimeout(() => {
-                        bubble.style.display = 'none';
-                        isHPSpeaking = false;
-                    }, 500);
+                    eisaAudio.volume = 1.0; bubble.style.opacity = '0';
+                    setTimeout(() => { bubble.style.display = 'none'; isHPSpeaking = false; }, 500);
                 }, 1500);
             };
             window.speechSynthesis.speak(uttr);
@@ -723,11 +674,8 @@
         }
 
         function updateUI(state) {
-            if (state === 'stop') {
-                iconPath.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
-            } else {
-                iconPath.setAttribute('d', 'M8 5v14l11-7z');
-            }
+            if (state === 'stop') iconPath.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+            else iconPath.setAttribute('d', 'M8 5v14l11-7z');
         }
 
         document.addEventListener('visibilitychange', () => {
@@ -736,24 +684,18 @@
                 if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
                     window.speechSynthesis.pause();
                     isSpeechPausedByLeave = true;
-                    eisaAudio.pause();
                 }
                 if (currentPhase === 3 && danceTimer) {
-                    clearInterval(danceTimer);
-                    danceTimer = null;
-                    isDancePausedByLeave = true;
+                    clearInterval(danceTimer); danceTimer = null; isDancePausedByLeave = true;
                 }
+                eisaAudio.pause();
             } else if (document.visibilityState === 'visible') {
-                // 戻ってきた時：フラグを確認して再開する
+                eisaAudio.play().catch(e => console.log("BGM再開エラー", e));
                 if (isSpeechPausedByLeave) {
-                    window.speechSynthesis.resume();
-                    isSpeechPausedByLeave = false;
-                    eisaAudio.play().catch(e => console.log("Eisa audio resume failed", e));
+                    window.speechSynthesis.resume(); isSpeechPausedByLeave = false;
                 }
-                // --- ★ここを追加（確実に再開させるための追記） ---
                 if (isDancePausedByLeave) {
-                    startDance();
-                    isDancePausedByLeave = false;
+                    startDance(); isDancePausedByLeave = false;
                 }
             }
         });
@@ -761,17 +703,15 @@
         [hpBtn, handBtn, audienceBtn, questionBtn].forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-                    window.speechSynthesis.pause();
-                    isSpeechPausedByLeave = true;
-                    eisaAudio.pause();
+                    window.speechSynthesis.pause(); isSpeechPausedByLeave = true;
                 }
                 if (currentPhase === 3 && danceTimer) {
-                    clearInterval(danceTimer);
-                    danceTimer = null;
-                    isDancePausedByLeave = true;
+                    clearInterval(danceTimer); danceTimer = null; isDancePausedByLeave = true;
                 }
+                eisaAudio.pause();
             });
         });
     </script>
 </body>
+
 </html>
